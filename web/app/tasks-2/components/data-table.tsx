@@ -224,7 +224,7 @@ export function DataTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 1,
+    pageIndex: 0,
     pageSize: 10,
   });
 
@@ -232,7 +232,7 @@ export function DataTable() {
     queryKey: ["deployments", pagination, sorting, columnFilters, globalFilter],
     queryFn: async () => {
       const params = new URLSearchParams({
-        page: pagination.pageIndex.toString(),
+        page: (pagination.pageIndex + 1).toString(),
         pageSize: pagination.pageSize.toString(),
         search: globalFilter,
         sortBy: sorting[0]?.id || "priority",

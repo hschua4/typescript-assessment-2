@@ -1,40 +1,36 @@
-import express, { type Express } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import { type TaskService } from './services/TaskService';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { secureHeaders } from 'hono/secure-headers';
+import type { TaskService } from './services/TaskService';
 import { createTaskRoutes } from './routes/taskRoutes';
 import { errorHandler, notFoundHandler, requestLogger } from './middlewares';
 
-export const createApp = (taskService: TaskService): Express => {
-  const app = express();
+export const createApp = (taskService: TaskService) => {
+  const app = new Hono();
 
   // Security middleware
-  app.use(helmet());
-  app.use(cors());
-
-  // Body parsing
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  app.use('*', secureHeaders());
+  app.use('*', cors());
 
   // Request logging
-  app.use(requestLogger);
+  app.use('*', requestLogger());
 
   // Health check
-  app.get('/health', (req, res) => {
-    res.status(200).json({
+  app.get('/health', c => {
+    return c.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
     });
   });
 
   // API routes
-  app.use('/tasks', createTaskRoutes(taskService));
+  app.route('/tasks', createTaskRoutes(taskService));
 
   // 404 handler
-  app.use(notFoundHandler);
+  app.notFound(notFoundHandler);
 
-  // Error handler (must be last)
-  app.use(errorHandler);
+  // Error handler
+  app.onError(errorHandler);
 
   return app;
 };

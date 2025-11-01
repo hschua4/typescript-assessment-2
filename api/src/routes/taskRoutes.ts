@@ -1,89 +1,58 @@
-import { Router, type Request, type Response, type NextFunction } from 'express';
+import { Hono } from 'hono';
+import type { Context } from 'hono';
 import type { TaskService } from '../services/TaskService';
-import { authenticate, validate, validateQuery } from '../middlewares';
+import { authenticate } from '../middlewares';
 import { TaskCreateInputSchema, TaskUpdateInputSchema, TaskFiltersSchema } from '../types/task';
+import { zValidator } from '@hono/zod-validator';
 
-export const createTaskRoutes = (taskService: TaskService): Router => {
-  const router = Router();
+export const createTaskRoutes = (taskService: TaskService) => {
+  const app = new Hono();
 
   /**
    * POST /tasks - Create a new task
    */
-  router.post(
-    '/',
-    authenticate,
-    validate(TaskCreateInputSchema),
-    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        const task = await taskService.createTask(req.body);
-        res.status(201).json(task);
-      } catch (error) {
-        next(error);
-      }
-    }
-  );
+  app.post('/', zValidator('json', TaskCreateInputSchema), async c => {
+    const body = c.req.valid('json');
+    const task = await taskService.createTask(body);
+    return c.json(task, 201);
+  });
 
   /**
    * GET /tasks - List tasks with filters
    */
-  router.get(
-    '/',
-    validateQuery(TaskFiltersSchema),
-    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        const filters = req.query;
-        const result = await taskService.getTasks(filters);
-        res.status(200).json(result);
-      } catch (error) {
-        next(error);
-      }
-    }
-  );
+  app.get('/', zValidator('json', TaskFiltersSchema), async c => {
+    const filters = c.req.valid('json');
+    const result = await taskService.getTasks(filters);
+    return c.json(result, 200);
+  });
 
   /**
    * GET /tasks/:id - Get a single task
    */
-  router.get('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const task = await taskService.getTask(req.params.id!);
-      res.status(200).json(task);
-    } catch (error) {
-      next(error);
-    }
+  app.get('/:id', async (c: Context) => {
+    const id = c.req.param('id');
+    const task = await taskService.getTask(id);
+    return c.json(task, 200);
   });
 
   /**
    * PATCH /tasks/:id - Update a task
    */
-  router.patch(
-    '/:id',
-    authenticate,
-    validate(TaskUpdateInputSchema),
-    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        const task = await taskService.updateTask(req.params.id!, req.body);
-        res.status(200).json(task);
-      } catch (error) {
-        next(error);
-      }
-    }
-  );
+  app.patch('/:id', authenticate(), zValidator('json', TaskUpdateInputSchema), async c => {
+    const id = c.req.param('id');
+    const body = c.req.valid('json');
+    const task = await taskService.updateTask(id, body);
+    return c.json(task, 200);
+  });
 
   /**
    * DELETE /tasks/:id - Delete a task
    */
-  router.delete(
-    '/:id',
-    authenticate,
-    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        await taskService.deleteTask(req.params.id!);
-        res.status(204).send();
-      } catch (error) {
-        next(error);
-      }
-    }
-  );
+  app.delete('/:id', authenticate(), async (c: Context) => {
+    const id = c.req.param('id');
+    await taskService.deleteTask(id);
+    return c.body(null, 204);
+  });
 
-  return router;
+  return app;
 };

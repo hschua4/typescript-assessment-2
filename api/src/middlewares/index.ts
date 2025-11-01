@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Context, Next, MiddlewareHandler } from 'hono';
 import { type z, ZodError } from 'zod';
 import {
   ApplicationError,
@@ -10,62 +10,64 @@ import { logger } from '../utils/logger';
 /**
  * Authentication middleware - validates Bearer token
  */
-export const authenticate = (req: Request, res: Response, next: NextFunction): void => {
-  const authHeader = req.headers.authorization;
+export const authenticate = (): MiddlewareHandler => {
+  return async (c: Context, next: Next) => {
+    const authHeader = c.req.header('Authorization');
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    const error = createUnauthorizedError('Missing or invalid Authorization header');
-    res.status(error.statusCode).json(error.toProblemDetail(req.originalUrl));
-    return;
-  }
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const error = createUnauthorizedError('Missing or invalid Authorization header');
+      return c.json(error.toProblemDetail(c.req.path), error.statusCode);
+    }
 
-  const token = authHeader.substring(7);
-  const validToken = process.env.API_TOKEN || 'demo-token-12345';
+    const token = authHeader.substring(7);
+    const validToken = process.env.API_TOKEN || 'demo-token-12345';
 
-  if (token !== validToken) {
-    const error = createUnauthorizedError('Invalid API token');
-    res.status(error.statusCode).json(error.toProblemDetail(req.originalUrl));
-    return;
-  }
+    if (token !== validToken) {
+      const error = createUnauthorizedError('Invalid API token');
+      return c.json(error.toProblemDetail(c.req.path), error.statusCode);
+    }
 
-  next();
+    return await next();
+  };
 };
 
 /**
  * Request logging middleware
  */
-export const requestLogger = (req: Request, res: Response, next: NextFunction): void => {
-  const start = Date.now();
+export const requestLogger = (): MiddlewareHandler => {
+  return async (c: Context, next: Next) => {
+    const start = Date.now();
+    const method = c.req.method;
+    const path = c.req.path;
 
-  res.on('finish', () => {
+    logger.info('Request received', {
+      method,
+      path,
+      query: c.req.query(),
+    });
+
+    await next();
+
     const duration = Date.now() - start;
     logger.info('Request completed', {
-      method: req.method,
-      path: req.path,
-      statusCode: res.statusCode,
+      method,
+      path,
+      statusCode: c.res.status,
       duration,
-      ip: req.ip,
     });
-  });
-
-  logger.info('Request received', {
-    method: req.method,
-    path: req.path,
-    query: req.query,
-    ip: req.ip,
-  });
-
-  next();
+  };
 };
 
 /**
- * Validation middleware factory
+ * Validation middleware factory for body
  */
-export const validate = <T extends z.ZodType>(schema: T) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+export const validateBody = <T extends z.ZodType>(schema: T): MiddlewareHandler => {
+  return async (c: Context, next: Next) => {
     try {
-      req.body = schema.parse(req.body);
-      next();
+      const body = await c.req.json();
+      const validated = schema.parse(body);
+      c.set('validatedBody', validated);
+      await next();
     } catch (error) {
       if (error instanceof ZodError) {
         const errors: Record<string, string[]> = {};
@@ -79,10 +81,9 @@ export const validate = <T extends z.ZodType>(schema: T) => {
         });
 
         const appError = createValidationError(errors);
-        res.status(appError.statusCode).json(appError.toProblemDetail(req.originalUrl));
-      } else {
-        next(error);
+        return c.json(appError.toProblemDetail(c.req.path), appError.statusCode);
       }
+      throw error;
     }
   };
 };
@@ -90,11 +91,13 @@ export const validate = <T extends z.ZodType>(schema: T) => {
 /**
  * Query parameter validation middleware
  */
-export const validateQuery = <T extends z.ZodType>(schema: T) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+export const validateQuery = <T extends z.ZodType>(schema: T): MiddlewareHandler => {
+  return async (c: Context, next: Next) => {
     try {
-      req.query = schema.parse(req.query) as typeof req.query;
-      next();
+      const query = c.req.query();
+      const validated = schema.parse(query);
+      c.set('validatedQuery', validated);
+      await next();
     } catch (error) {
       if (error instanceof ZodError) {
         const errors: Record<string, string[]> = {};
@@ -108,10 +111,9 @@ export const validateQuery = <T extends z.ZodType>(schema: T) => {
         });
 
         const appError = createValidationError(errors);
-        res.status(appError.statusCode).json(appError.toProblemDetail(req.originalUrl));
-      } else {
-        next(error);
+        return c.json(appError.toProblemDetail(c.req.path), appError.statusCode);
       }
+      throw error;
     }
   };
 };
@@ -119,45 +121,44 @@ export const validateQuery = <T extends z.ZodType>(schema: T) => {
 /**
  * Global error handler
  */
-export const errorHandler = (
-  err: Error | ApplicationError,
-  req: Request,
-  res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  next: NextFunction
-): void => {
+export const errorHandler = (err: Error, c: Context) => {
   logger.error('Error occurred', {
     error: err.message,
     stack: err.stack,
-    path: req.path,
-    method: req.method,
+    path: c.req.path,
+    method: c.req.method,
   });
 
   if (err instanceof ApplicationError) {
-    const problemDetail = err.toProblemDetail(req.originalUrl);
-    res.status(err.statusCode).json(problemDetail);
-    return;
+    const problemDetail = err.toProblemDetail(c.req.path);
+    return c.json(problemDetail);
   }
 
   // Unexpected errors
-  res.status(500).json({
-    type: 'https://api.tasktracker.com/problems/internal-error',
-    title: 'Internal Server Error',
-    status: 500,
-    detail: 'An unexpected error occurred',
-    instance: req.originalUrl,
-  });
+  return c.json(
+    {
+      type: 'https://api.tasktracker.com/problems/internal-error',
+      title: 'Internal Server Error',
+      status: 500,
+      detail: 'An unexpected error occurred',
+      instance: c.req.path,
+    },
+    500
+  );
 };
 
 /**
  * 404 handler
  */
-export const notFoundHandler = (req: Request, res: Response): void => {
-  res.status(404).json({
-    type: 'https://api.tasktracker.com/problems/not-found',
-    title: 'Not Found',
-    status: 404,
-    detail: `Route ${req.method} ${req.path} not found`,
-    instance: req.originalUrl,
-  });
+export const notFoundHandler = (c: Context) => {
+  return c.json(
+    {
+      type: 'https://api.tasktracker.com/problems/not-found',
+      title: 'Not Found',
+      status: 404,
+      detail: `Route ${c.req.method} ${c.req.path} not found`,
+      instance: c.req.path,
+    },
+    404
+  );
 };

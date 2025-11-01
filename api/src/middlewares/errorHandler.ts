@@ -1,27 +1,24 @@
-import type { Request, Response } from 'express';
-import { ApplicationError } from '../errors/AppError';
-import { logger } from '../utils/logger';
+import { Hono } from 'hono';
 
-export const errorHandler = (err: Error | ApplicationError, req: Request, res: Response): void => {
-  logger.error('Error occurred', {
-    error: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-  });
+const app = new Hono();
 
-  if (err instanceof ApplicationError) {
-    const problemDetail = err.toProblemDetail(req.originalUrl);
-    res.status(err.statusCode).json(problemDetail);
-    return;
+const customErrorHandler = async (c, next) => {
+  try {
+    await next();
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      return c.json({ message: 'Validation failed', details: err.errors }, 422);
+    }
+    throw err; // Re-throw if not a specific error type to be caught by onError
   }
-
-  // Unexpected errors
-  res.status(500).json({
-    type: 'https://api.tasktracker.com/problems/internal-error',
-    title: 'Internal Server Error',
-    status: 500,
-    detail: 'An unexpected error occurred',
-    instance: req.originalUrl,
-  });
 };
+
+app.use(customErrorHandler);
+
+app.get('/validation', c => {
+  // Simulate a validation error
+  const error = new Error('Validation failed');
+  error.name = 'ValidationError';
+  error.errors = [{ field: 'name', message: 'Name is required' }];
+  throw error;
+});

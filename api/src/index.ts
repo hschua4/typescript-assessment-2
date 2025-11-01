@@ -1,10 +1,10 @@
-import 'dotenv/config';
+import { serve } from '@hono/node-server';
 import { createApp } from './app';
 import { SqliteTaskRepository } from './repositories/SqliteTaskRepository';
 import { TaskService } from './services/TaskService';
 import { logger } from './utils/logger';
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 const DB_PATH = process.env.DB_PATH || './tasks.db';
 
 function main() {
@@ -16,15 +16,18 @@ function main() {
     // Initialize service
     const taskService = new TaskService(repository);
 
-    // Create Express app
+    // Create Hono app
     const app = createApp(taskService);
 
     // Start server
-    const server = app.listen(PORT, () => {
-      logger.info('Server started', {
-        port: PORT,
-        env: process.env.NODE_ENV || 'development',
-      });
+    const server = serve({
+      fetch: app.fetch,
+      port: PORT,
+    });
+
+    logger.info('Server started', {
+      port: PORT,
+      env: process.env.NODE_ENV || 'development',
     });
 
     // Graceful shutdown

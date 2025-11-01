@@ -1,26 +1,25 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Context, Next } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import { logger } from '../utils/logger';
 
-export const requestLogger = (req: Request, res: Response, next: NextFunction): void => {
+export const requestLogger = createMiddleware(async (c: Context, next: Next) => {
   const start = Date.now();
-
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    logger.info('Request completed', {
-      method: req.method,
-      path: req.path,
-      statusCode: res.statusCode,
-      duration,
-      ip: req.ip,
-    });
-  });
+  const method = c.req.method;
+  const path = c.req.path;
 
   logger.info('Request received', {
-    method: req.method,
-    path: req.path,
-    query: req.query,
-    ip: req.ip,
+    method,
+    path,
+    query: c.req.query(),
   });
 
-  next();
-};
+  await next();
+
+  const duration = Date.now() - start;
+  logger.info('Request completed', {
+    method,
+    path,
+    statusCode: c.res.status,
+    duration,
+  });
+});

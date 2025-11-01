@@ -20,8 +20,9 @@ export const createTaskRoutes = (taskService: TaskService) => {
   /**
    * GET /tasks - List tasks with filters
    */
-  app.get('/', zValidator('json', TaskFiltersSchema), async c => {
-    const filters = c.req.valid('json');
+  app.get('/', zValidator('query', TaskFiltersSchema), async c => {
+    const filters = c.req.valid('query');
+    console.log({ filters });
     const result = await taskService.getTasks(filters);
     return c.json(result, 200);
   });

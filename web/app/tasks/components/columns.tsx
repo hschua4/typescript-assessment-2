@@ -1,6 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
+import dayjs from "dayjs";
 
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,7 +39,7 @@ export const columns: ColumnDef<Task>[] = [
   {
     accessorKey: "id",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Task" />
+      <DataTableColumnHeader column={column} title="ID" />
     ),
     cell: ({ row }) => <div className="w-[80px]">{row.getValue("id")}</div>,
     enableSorting: false,
@@ -114,6 +115,60 @@ export const columns: ColumnDef<Task>[] = [
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
+    },
+  },
+  {
+    accessorKey: "dueDate",
+    meta: "Due Date",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Due Date" />
+    ),
+    cell: ({ row }) => {
+      return (
+        <div className="flex space-x-2">
+          <span className="max-w-[500px] truncate font-medium">
+            {row.getValue("dueDate")
+              ? dayjs(row.getValue("dueDate")).format("DD MMM YYYY hh:mm A")
+              : "-"}
+          </span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "tags",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Tags" />
+    ),
+    cell: ({ row }) => {
+      const label = labels.find((label) => label.value === row.original.label);
+
+      return (
+        <div className="flex space-x-2">
+          {label && <Badge variant="outline">{label.label}</Badge>}
+          <span className="max-w-[500px] truncate font-medium">
+            {row.getValue("tags")}
+          </span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "version",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Version" />
+    ),
+    cell: ({ row }) => {
+      const label = labels.find((label) => label.value === row.original.label);
+
+      return (
+        <div className="flex space-x-2">
+          {label && <Badge variant="outline">{label.label}</Badge>}
+          <span className="max-w-[500px] truncate font-medium">
+            {row.getValue("version")}
+          </span>
+        </div>
+      );
     },
   },
   {

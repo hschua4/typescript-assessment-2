@@ -69,13 +69,21 @@ type DataResponse = {
 
 type UpdateDeploymentPayload = {
   id: string;
-  name?: string;
-  status?: "ready" | "building" | "error";
-  branch?: string;
-  environment?: "production" | "preview" | "development";
-  commit?: string;
-  author?: string;
+  title?: string;
+  status?: "todo" | "doing" | "done";
+  priority?: number;
+  dueDate?: string | null;
+  tags?: string[];
+  version: number;
 };
+
+const priorityOptions = [
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5" },
+];
 
 function EditableCell({
   value: initialValue,
@@ -90,14 +98,14 @@ function EditableCell({
   column: any;
   type?: "text" | "select" | "status";
   options?: { value: string; label: string }[];
-  onUpdate: (id: string, field: string, value: string) => void;
+  onUpdate: (id: string, field: string, value: string, version: number) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(initialValue);
 
   const handleSave = () => {
     if (value !== initialValue) {
-      onUpdate(row.original.id, column.id, value);
+      onUpdate(row.original.id, column.id, value, row.original.version);
     }
     setIsEditing(false);
   };
@@ -122,7 +130,12 @@ function EditableCell({
             value={value}
             onValueChange={(newValue) => {
               setValue(newValue);
-              onUpdate(row.original.id, column.id, newValue);
+              onUpdate(
+                row.original.id,
+                column.id,
+                newValue,
+                row.original.version
+              );
               setIsEditing(false);
             }}
             open={isEditing}
@@ -156,9 +169,9 @@ function EditableCell({
           <>
             <div
               className={`h-2 w-2 rounded-full ${
-                value === "ready"
+                value === "done"
                   ? "bg-green-500"
-                  : value === "building"
+                  : value === "doing"
                   ? "bg-yellow-500"
                   : "bg-red-500"
               }`}
@@ -181,7 +194,12 @@ function EditableCell({
             value={value}
             onValueChange={(newValue) => {
               setValue(newValue);
-              onUpdate(row.original.id, column.id, newValue);
+              onUpdate(
+                row.original.id,
+                column.id,
+                newValue,
+                row.original.version
+              );
               setIsEditing(false);
             }}
             open={isEditing}
@@ -273,13 +291,19 @@ export function DataTable() {
 
   const updateDeploymentMutation = useMutation({
     mutationFn: async (payload: UpdateDeploymentPayload) => {
-      const res = await fetch(`/api/deployments/${payload.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_API_URL}/api/tasks/${payload.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
       if (!res.ok) {
-        throw new Error("Failed to update deployment");
+        throw new Error("Failed to update task");
       }
       return res.json();
     },
@@ -316,13 +340,13 @@ export function DataTable() {
         ["deployments", pagination, sorting, columnFilters, globalFilter],
         context?.previousData
       );
-      toast("Failed to update deployment. Please try again.");
+      toast("Failed to update task.Please refresh and try again.");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["deployments"] });
     },
     onSuccess: () => {
-      toast("Deployment updated successfully.");
+      toast("Task updated successfully.");
     },
   });
 
@@ -382,10 +406,16 @@ export function DataTable() {
     },
   });
 
-  const handleUpdate = (id: string, field: string, value: string) => {
+  const handleUpdate = (
+    id: string,
+    field: string,
+    value: string,
+    version: number
+  ) => {
     updateDeploymentMutation.mutate({
       id,
       [field]: value,
+      version,
     });
   };
 
@@ -501,6 +531,8 @@ export function DataTable() {
       cell: ({ row, column }) => (
         <EditableCell
           value={row.original.priority}
+          type="select"
+          options={priorityOptions}
           row={row}
           column={column}
           onUpdate={handleUpdate}
@@ -556,10 +588,9 @@ export function DataTable() {
       },
       cell: ({ row, column }) => (
         <EditableCell
-          value={row.original.tags}
+          value={row.original.tags.toString()}
           row={row}
           column={column}
-          type="status"
           onUpdate={handleUpdate}
         />
       ),

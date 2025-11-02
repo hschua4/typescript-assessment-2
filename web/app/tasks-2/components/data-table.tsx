@@ -31,8 +31,17 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  MoreHorizontal,
+  Delete,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type Deployment = {
   id: string;
@@ -317,6 +326,62 @@ export function DataTable() {
     },
   });
 
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (payload: UpdateDeploymentPayload) => {
+      return await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_API_URL}/api/tasks/${payload.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+          },
+        }
+      );
+    },
+    onMutate: async (newDeployment) => {
+      await queryClient.cancelQueries({ queryKey: ["deployments"] });
+
+      const previousData = queryClient.getQueryData<DataResponse>([
+        "deployments",
+        pagination,
+        sorting,
+        columnFilters,
+        globalFilter,
+      ]);
+
+      queryClient.setQueryData<DataResponse>(
+        ["deployments", pagination, sorting, columnFilters, globalFilter],
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((deployment) =>
+              deployment.id === newDeployment.id
+                ? { ...deployment, ...newDeployment }
+                : deployment
+            ),
+          };
+        }
+      );
+
+      return { previousData };
+    },
+    onError: (err, newDeployment, context) => {
+      queryClient.setQueryData(
+        ["deployments", pagination, sorting, columnFilters, globalFilter],
+        context?.previousData
+      );
+      console.log({ err });
+      toast.error("Failed to delete task. Please try again.");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["deployments"] });
+    },
+    onSuccess: () => {
+      toast.success("Task deleted successfully.");
+    },
+  });
+
   const handleUpdate = (id: string, field: string, value: string) => {
     updateDeploymentMutation.mutate({
       id,
@@ -527,6 +592,35 @@ export function DataTable() {
           onUpdate={handleUpdate}
         />
       ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const deployment = row.original;
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuItem
+                onClick={() =>
+                  deleteTaskMutation.mutate({
+                    id: deployment.id,
+                  })
+                }
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   ];
 

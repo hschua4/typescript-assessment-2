@@ -105,7 +105,6 @@ export function NewTaskDialog() {
       onSubmit: formSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log({ value });
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_API_URL}/api/tasks`,
         {
@@ -122,6 +121,7 @@ export function NewTaskDialog() {
         throw new Error("Failed to fetch deployments");
       }
       setIsOpen(false);
+      toast.success("Task created successfully");
       return res.json();
     },
   });

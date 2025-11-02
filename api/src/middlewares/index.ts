@@ -131,20 +131,19 @@ export const errorHandler = (err: Error, c: Context) => {
 
   if (err instanceof ApplicationError) {
     const problemDetail = err.toProblemDetail(c.req.path);
+    c.status(problemDetail.status);
     return c.json(problemDetail);
   }
 
   // Unexpected errors
-  return c.json(
-    {
-      type: 'https://api.tasktracker.com/problems/internal-error',
-      title: 'Internal Server Error',
-      status: 500,
-      detail: 'An unexpected error occurred',
-      instance: c.req.path,
-    },
-    500
-  );
+  c.status(500);
+  return c.json({
+    type: 'https://api.tasktracker.com/problems/internal-error',
+    title: 'Internal Server Error',
+    status: 500,
+    detail: 'An unexpected error occurred',
+    instance: c.req.path,
+  });
 };
 
 /**

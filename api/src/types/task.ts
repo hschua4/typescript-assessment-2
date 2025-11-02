@@ -1,3 +1,4 @@
+import { StatusCode } from 'hono/utils/http-status';
 import { z } from 'zod';
 
 // Branded type for TaskId to prevent accidental string usage
@@ -91,7 +92,7 @@ export interface PaginatedResponse<T> {
 export interface ProblemDetail {
   type: string;
   title: string;
-  status: number;
+  status: StatusCode;
   detail?: string;
   errors?: Record<string, string[]>;
   instance?: string;

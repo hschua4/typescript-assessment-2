@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import type { TaskService } from '../services/TaskService';
-import { authenticate } from '../middlewares';
+import { authenticate } from '../middlewares/authenticate';
 import { TaskCreateInputSchema, TaskUpdateInputSchema, TaskFiltersSchema } from '../types/task';
 import { zValidator } from '@hono/zod-validator';
 
@@ -11,7 +11,7 @@ export const createTaskRoutes = (taskService: TaskService) => {
   /**
    * POST /tasks - Create a new task
    */
-  app.post('/', zValidator('json', TaskCreateInputSchema), async c => {
+  app.post('/', authenticate(), zValidator('json', TaskCreateInputSchema), async c => {
     const body = c.req.valid('json');
     const task = await taskService.createTask(body);
     return c.json(task, 201);

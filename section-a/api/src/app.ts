@@ -5,7 +5,8 @@ import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
 import type { TaskService } from './services/TaskService';
 import { createTaskRoutes } from './routes/taskRoutes';
-import { errorHandler, notFoundHandler } from './middlewares';
+import { notFoundHandler } from './middlewares/notFoundHandler';
+import { errorHandler } from './middlewares/errorHandler';
 
 export const createApp = (taskService: TaskService) => {
   const app = new Hono();
@@ -13,7 +14,6 @@ export const createApp = (taskService: TaskService) => {
   // Security middleware
   app.use('*', secureHeaders());
   app.use('*', cors());
-  app.use('/api/*', bearerAuth({ token: process.env.API_TOKEN }));
 
   // Request logging
   app.use(logger());

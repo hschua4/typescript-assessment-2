@@ -1,24 +1,28 @@
-import { Hono } from 'hono';
+import type { Context } from 'hono';
+import { ApplicationError } from '../errors/AppError';
+import { logger } from '../utils/logger';
 
-const app = new Hono();
+export const errorHandler = (err: Error, c: Context) => {
+  logger.error('Error occurred', {
+    error: err.message,
+    stack: err.stack,
+    path: c.req.path,
+    method: c.req.method,
+  });
 
-const customErrorHandler = async (c, next) => {
-  try {
-    await next();
-  } catch (err) {
-    if (err.name === 'ValidationError') {
-      return c.json({ message: 'Validation failed', details: err.errors }, 422);
-    }
-    throw err; // Re-throw if not a specific error type to be caught by onError
+  if (err instanceof ApplicationError) {
+    const problemDetail = err.toProblemDetail(c.req.path);
+    c.status(problemDetail.status);
+    return c.json(problemDetail);
   }
+
+  // Unexpected errors
+  c.status(500);
+  return c.json({
+    type: 'https://api.tasktracker.com/problems/internal-error',
+    title: 'Internal Server Error',
+    status: 500,
+    detail: 'An unexpected error occurred',
+    instance: c.req.path,
+  });
 };
-
-app.use(customErrorHandler);
-
-app.get('/validation', c => {
-  // Simulate a validation error
-  const error = new Error('Validation failed');
-  error.name = 'ValidationError';
-  error.errors = [{ field: 'name', message: 'Name is required' }];
-  throw error;
-});

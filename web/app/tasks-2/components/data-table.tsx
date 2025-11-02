@@ -714,34 +714,6 @@ export function DataTable() {
             <SelectItem value="done">Done</SelectItem>
           </SelectContent>
         </Select>
-        <Select
-          value={
-            (columnFilters.find((f) => f.id === "environment")
-              ?.value as string) || "all"
-          }
-          onValueChange={(value) => {
-            if (value === "all") {
-              setColumnFilters((prev) =>
-                prev.filter((f) => f.id !== "environment")
-              );
-            } else {
-              setColumnFilters((prev) => [
-                ...prev.filter((f) => f.id !== "environment"),
-                { id: "environment", value },
-              ]);
-            }
-          }}
-        >
-          <SelectTrigger className="w-[180px] bg-card border-border">
-            <SelectValue placeholder="Filter by environment" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Environments</SelectItem>
-            <SelectItem value="production">Production</SelectItem>
-            <SelectItem value="preview">Preview</SelectItem>
-            <SelectItem value="development">Development</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Table */}

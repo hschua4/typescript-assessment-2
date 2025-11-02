@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createApp } from '../app';
 import { InMemoryTaskRepository } from '../repositories/InMemoryTaskRepository';
 import { TaskService } from '../services/TaskService';
+import { TaskId } from '../types/task';
 
 const API_TOKEN = 'test-token-12345';
 
@@ -33,7 +34,7 @@ describe('Task API Integration Tests', () => {
       });
 
       expect(response.status).toBe(201);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body).toMatchObject({
         title: 'Test task',
         status: 'todo',
@@ -66,7 +67,7 @@ describe('Task API Integration Tests', () => {
       });
 
       expect(response.status).toBe(400);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.title).toBe('Validation Failed');
       expect(body.errors).toBeDefined();
     });
@@ -95,7 +96,7 @@ describe('Task API Integration Tests', () => {
       });
 
       expect(response.status).toBe(201);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.status).toBe('todo');
       expect(body.priority).toBe(3);
       expect(body.tags).toEqual([]);
@@ -114,7 +115,7 @@ describe('Task API Integration Tests', () => {
       const response = await app.request('api/tasks');
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.data).toHaveLength(3);
       expect(body.pagination).toMatchObject({
         page: 1,
@@ -128,7 +129,7 @@ describe('Task API Integration Tests', () => {
       const response = await app.request('/tasks?status=doing');
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.data).toHaveLength(1);
       expect(body.data[0].status).toBe('doing');
     });
@@ -137,7 +138,7 @@ describe('Task API Integration Tests', () => {
       const response = await app.request('/tasks?tag=work');
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.data).toHaveLength(2);
     });
 
@@ -145,7 +146,7 @@ describe('Task API Integration Tests', () => {
       const response = await app.request('/tasks?search=Task%202');
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.data).toHaveLength(1);
       expect(body.data[0].title).toBe('Task 2');
     });
@@ -154,7 +155,7 @@ describe('Task API Integration Tests', () => {
       const response = await app.request('/tasks?sortBy=priority&sortOrder=desc');
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.data[0].priority).toBe(5);
       expect(body.data[2].priority).toBe(1);
     });
@@ -163,7 +164,7 @@ describe('Task API Integration Tests', () => {
       const response = await app.request('/tasks?page=1&pageSize=2');
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.data).toHaveLength(2);
       expect(body.pagination).toMatchObject({
         page: 1,
@@ -176,12 +177,17 @@ describe('Task API Integration Tests', () => {
 
   describe('GET /tasks/:id', () => {
     it('should get a task by ID', async () => {
-      const task = await repository.create({ title: 'Test task' });
+      const task = await repository.create({
+        title: 'Test task',
+        status: 'todo',
+        priority: 3,
+        tags: ['test'],
+      });
 
       const response = await app.request(`/tasks/${task.id}`);
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.id).toBe(task.id);
       expect(body.title).toBe('Test task');
     });
@@ -190,14 +196,19 @@ describe('Task API Integration Tests', () => {
       const response = await app.request('/tasks/00000000-0000-0000-0000-000000000000');
 
       expect(response.status).toBe(404);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.title).toBe('Resource Not Found');
     });
   });
 
   describe('PATCH /tasks/:id', () => {
     it('should update a task successfully', async () => {
-      const task = await repository.create({ title: 'Original' });
+      const task = await repository.create({
+        title: 'Test task',
+        status: 'todo',
+        priority: 3,
+        tags: ['test'],
+      });
 
       const response = await app.request(`/tasks/${task.id}`, {
         method: 'PATCH',
@@ -213,17 +224,22 @@ describe('Task API Integration Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.title).toBe('Updated');
       expect(body.status).toBe('done');
       expect(body.version).toBe(2);
     });
 
     it('should handle optimistic concurrency conflict', async () => {
-      const task = await repository.create({ title: 'Original' });
+      const task = await repository.create({
+        title: 'Test task',
+        status: 'todo',
+        priority: 3,
+        tags: ['test'],
+      });
 
       // First update succeeds
-      await repository.update(task.id, { title: 'Updated Once', version: 1 });
+      await repository.update(task.id as TaskId, { title: 'Updated Once', version: 1 });
 
       // Second update with stale version fails
       const response = await app.request(`/tasks/${task.id}`, {
@@ -239,12 +255,17 @@ describe('Task API Integration Tests', () => {
       });
 
       expect(response.status).toBe(409);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.title).toBe('Conflict');
     });
 
     it('should reject update without authentication', async () => {
-      const task = await repository.create({ title: 'Test' });
+      const task = await repository.create({
+        title: 'Test task',
+        status: 'todo',
+        priority: 3,
+        tags: ['test'],
+      });
 
       const response = await app.request(`/tasks/${task.id}`, {
         method: 'PATCH',
@@ -271,21 +292,31 @@ describe('Task API Integration Tests', () => {
 
   describe('DELETE /tasks/:id', () => {
     it('should delete a task successfully', async () => {
-      const task = await repository.create({ title: 'To Delete' });
+      const task = await repository.create({
+        title: 'Test task',
+        status: 'todo',
+        priority: 3,
+        tags: ['test'],
+      });
 
-      const response = await app.request(`/tasks/${task.id}`, {
+      const response = await app.request(`/tasks/${task.id as TaskId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${API_TOKEN}` },
       });
 
       expect(response.status).toBe(204);
 
-      const exists = await repository.exists(task.id);
+      const exists = await repository.exists(task.id as TaskId);
       expect(exists).toBe(false);
     });
 
     it('should reject delete without authentication', async () => {
-      const task = await repository.create({ title: 'Test' });
+      const task = await repository.create({
+        title: 'Test task',
+        status: 'todo',
+        priority: 3,
+        tags: ['test'],
+      });
 
       const response = await app.request(`/tasks/${task.id}`, {
         method: 'DELETE',
@@ -309,7 +340,7 @@ describe('Task API Integration Tests', () => {
       const response = await app.request('/health');
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.status).toBe('ok');
       expect(body.timestamp).toBeDefined();
     });
@@ -327,7 +358,7 @@ describe('Task API Integration Tests', () => {
       });
 
       expect(response.status).toBe(400);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body).toMatchObject({
         type: expect.stringContaining('https://api.tasktracker.com/problems/'),
         title: 'Validation Failed',
@@ -340,7 +371,7 @@ describe('Task API Integration Tests', () => {
       const response = await app.request('/unknown');
 
       expect(response.status).toBe(404);
-      const body = await response.json();
+      const body = (await response.json()) as any;
       expect(body.title).toBe('Not Found');
     });
   });

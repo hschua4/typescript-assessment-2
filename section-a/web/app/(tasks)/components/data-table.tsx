@@ -93,7 +93,7 @@ function EditableCell({
   options,
   onUpdate,
 }: {
-  value: string;
+  value: string | number | null;
   row: any;
   column: any;
   type?: "text" | "select" | "status";
@@ -101,10 +101,11 @@ function EditableCell({
   onUpdate: (id: string, field: string, value: string, version: number) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState(initialValue);
+  const initialString = initialValue == null ? "" : String(initialValue);
+  const [value, setValue] = useState(initialString);
 
   const handleSave = () => {
-    if (value !== initialValue) {
+    if (value !== initialString) {
       onUpdate(row.original.id, column.id, value, row.original.version);
     }
     setIsEditing(false);
@@ -114,7 +115,7 @@ function EditableCell({
     if (e.key === "Enter") {
       handleSave();
     } else if (e.key === "Escape") {
-      setValue(initialValue);
+      setValue(initialString);
       setIsEditing(false);
     }
   };
@@ -643,6 +644,7 @@ export function DataTable() {
                 onClick={() =>
                   deleteTaskMutation.mutate({
                     id: deployment.id,
+                    version: deployment.version,
                   })
                 }
               >

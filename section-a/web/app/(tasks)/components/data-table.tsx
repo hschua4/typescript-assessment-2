@@ -96,7 +96,7 @@ function EditableCell({
   value: string | number | null;
   row: any;
   column: any;
-  type?: "text" | "select" | "status" | "readonly";
+  type?: "text" | "select" | "status" | "date" | "readonly";
   options?: { value: string; label: string }[];
   onUpdate: (id: string, field: string, value: string, version: number) => void;
 }) {
@@ -219,6 +219,49 @@ function EditableCell({
           </Select>
         ) : (
           <span className="text-sm capitalize">{value}</span>
+        )}
+      </div>
+    );
+  }
+
+  if (type === "date") {
+    const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    };
+
+    const formatDateForInput = (dateString: string) => {
+      const date = new Date(dateString);
+      return date.toISOString().split("T")[0];
+    };
+
+    return (
+      <div className="cursor-pointer hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors">
+        {isEditing ? (
+          <Input
+            type="date"
+            value={formatDateForInput(value)}
+            onChange={(e) => {
+              const newDate = new Date(e.target.value).toISOString();
+              setValue(newDate);
+            }}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            className="h-8 text-sm"
+            autoFocus
+          />
+        ) : (
+          <div onClick={() => setIsEditing(true)} className="text-sm">
+            {value ? (
+              formatDate(value)
+            ) : (
+              <span className="text-muted-foreground">No due date</span>
+            )}
+          </div>
         )}
       </div>
     );
@@ -574,6 +617,7 @@ export function DataTable() {
           row={row}
           column={column}
           onUpdate={handleUpdate}
+          type="date"
         />
       ),
     },

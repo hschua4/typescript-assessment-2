@@ -480,18 +480,8 @@ export function DataTable() {
       accessorKey: "id",
       header: ({ column }) => {
         return (
-          <button
-            className="flex items-center gap-2 hover:text-foreground transition-colors"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
+          <button className="flex items-center gap-2 hover:text-foreground transition-colors">
             ID
-            {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="h-4 w-4" />
-            ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="h-4 w-4 opacity-50" />
-            )}
           </button>
         );
       },
@@ -509,18 +499,8 @@ export function DataTable() {
       accessorKey: "title",
       header: ({ column }) => {
         return (
-          <button
-            className="flex items-center gap-2 hover:text-foreground transition-colors"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
+          <button className="flex items-center gap-2 hover:text-foreground transition-colors">
             Title
-            {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="h-4 w-4" />
-            ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="h-4 w-4 opacity-50" />
-            )}
           </button>
         );
       },
@@ -537,18 +517,8 @@ export function DataTable() {
       accessorKey: "status",
       header: ({ column }) => {
         return (
-          <button
-            className="flex items-center gap-2 hover:text-foreground transition-colors"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
+          <button className="flex items-center gap-2 hover:text-foreground transition-colors">
             Status
-            {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="h-4 w-4" />
-            ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="h-4 w-4 opacity-50" />
-            )}
           </button>
         );
       },
@@ -625,18 +595,8 @@ export function DataTable() {
       accessorKey: "tags",
       header: ({ column }) => {
         return (
-          <button
-            className="flex items-center gap-2 hover:text-foreground transition-colors"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
+          <button className="flex items-center gap-2 hover:text-foreground transition-colors">
             Tags
-            {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="h-4 w-4" />
-            ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="h-4 w-4 opacity-50" />
-            )}
           </button>
         );
       },

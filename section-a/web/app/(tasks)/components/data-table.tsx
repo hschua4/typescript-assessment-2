@@ -614,18 +614,8 @@ export function DataTable() {
       accessorKey: "version",
       header: ({ column }) => {
         return (
-          <button
-            className="flex items-center gap-2 hover:text-foreground transition-colors"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
+          <button className="flex items-center gap-2 hover:text-foreground transition-colors">
             Version
-            {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="h-4 w-4" />
-            ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="h-4 w-4 opacity-50" />
-            )}
           </button>
         );
       },

@@ -33,6 +33,7 @@ import {
   ArrowDown,
   MoreHorizontal,
   Delete,
+  Trash,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -643,28 +644,19 @@ export function DataTable() {
       header: "Actions",
       cell: ({ row }) => {
         const deployment = row.original;
-
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
-              <DropdownMenuItem
-                onClick={() =>
-                  deleteTaskMutation.mutate({
-                    id: deployment.id,
-                    version: deployment.version,
-                  })
-                }
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              deleteTaskMutation.mutate({
+                id: deployment.id,
+                version: deployment.version,
+              })
+            }
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
         );
       },
     },

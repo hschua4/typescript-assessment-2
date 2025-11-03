@@ -96,7 +96,7 @@ function EditableCell({
   value: string | number | null;
   row: any;
   column: any;
-  type?: "text" | "select" | "status";
+  type?: "text" | "select" | "status" | "readonly";
   options?: { value: string; label: string }[];
   onUpdate: (id: string, field: string, value: string, version: number) => void;
 }) {
@@ -224,22 +224,30 @@ function EditableCell({
     );
   }
 
+  if (type === "text") {
+    return (
+      <div className="cursor-pointer hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors">
+        {isEditing ? (
+          <Input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            className="h-8 font-mono text-sm"
+            autoFocus
+          />
+        ) : (
+          <div onClick={() => setIsEditing(true)} className="font-mono text-sm">
+            {value}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="cursor-pointer hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors">
-      {isEditing ? (
-        <Input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onBlur={handleSave}
-          onKeyDown={handleKeyDown}
-          className="h-8 font-mono text-sm"
-          autoFocus
-        />
-      ) : (
-        <div onClick={() => setIsEditing(true)} className="font-mono text-sm">
-          {value}
-        </div>
-      )}
+      <div className="font-mono text-sm">{value}</div>
     </div>
   );
 }
@@ -450,6 +458,7 @@ export function DataTable() {
           row={row}
           column={column}
           onUpdate={handleUpdate}
+          type="readonly"
         />
       ),
     },
@@ -620,7 +629,7 @@ export function DataTable() {
           value={row.original.version}
           row={row}
           column={column}
-          type="status"
+          type="readonly"
           onUpdate={handleUpdate}
         />
       ),

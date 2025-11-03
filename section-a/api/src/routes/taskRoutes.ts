@@ -4,6 +4,7 @@ import type { TaskService } from '../services/TaskService';
 import { authenticate } from '../middlewares/authenticate';
 import { TaskCreateInputSchema, TaskUpdateInputSchema, TaskFiltersSchema } from '../types/task';
 import { zValidator } from '@hono/zod-validator';
+import { validator } from '../utils/validator';
 
 export const createTaskRoutes = (taskService: TaskService) => {
   const app = new Hono();
@@ -11,7 +12,7 @@ export const createTaskRoutes = (taskService: TaskService) => {
   /**
    * POST /tasks - Create a new task
    */
-  app.post('/', authenticate(), zValidator('json', TaskCreateInputSchema), async c => {
+  app.post('/', authenticate(), validator('json', TaskCreateInputSchema), async c => {
     const body = c.req.valid('json');
     const task = await taskService.createTask(body);
     return c.json(task, 201);
@@ -20,7 +21,7 @@ export const createTaskRoutes = (taskService: TaskService) => {
   /**
    * GET /tasks - List tasks with filters
    */
-  app.get('/', zValidator('query', TaskFiltersSchema), async c => {
+  app.get('/', validator('query', TaskFiltersSchema), async c => {
     const filters = c.req.valid('query');
     console.log({ filters });
     const result = await taskService.getTasks(filters);
@@ -39,7 +40,7 @@ export const createTaskRoutes = (taskService: TaskService) => {
   /**
    * PATCH /tasks/:id - Update a task
    */
-  app.patch('/:id', authenticate(), zValidator('json', TaskUpdateInputSchema), async c => {
+  app.patch('/:id', authenticate(), validator('json', TaskUpdateInputSchema), async c => {
     const id = c.req.param('id');
     const body = c.req.valid('json');
     const task = await taskService.updateTask(id, body);

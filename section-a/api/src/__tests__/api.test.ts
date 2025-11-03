@@ -126,7 +126,7 @@ describe('Task API Integration Tests', () => {
     });
 
     it('should filter by status', async () => {
-      const response = await app.request('/tasks?status=doing');
+      const response = await app.request('api/tasks?status=doing');
 
       expect(response.status).toBe(200);
       const body = (await response.json()) as any;
@@ -135,7 +135,7 @@ describe('Task API Integration Tests', () => {
     });
 
     it('should filter by tag', async () => {
-      const response = await app.request('/tasks?tag=work');
+      const response = await app.request('api/tasks?tag=work');
 
       expect(response.status).toBe(200);
       const body = (await response.json()) as any;
@@ -143,7 +143,7 @@ describe('Task API Integration Tests', () => {
     });
 
     it('should search by title', async () => {
-      const response = await app.request('/tasks?search=Task%202');
+      const response = await app.request('api/tasks?search=Task%202');
 
       expect(response.status).toBe(200);
       const body = (await response.json()) as any;
@@ -152,7 +152,7 @@ describe('Task API Integration Tests', () => {
     });
 
     it('should sort by priority descending', async () => {
-      const response = await app.request('/tasks?sortBy=priority&sortOrder=desc');
+      const response = await app.request('api/tasks?sortBy=priority&sortOrder=desc');
 
       expect(response.status).toBe(200);
       const body = (await response.json()) as any;
@@ -161,7 +161,7 @@ describe('Task API Integration Tests', () => {
     });
 
     it('should paginate results', async () => {
-      const response = await app.request('/tasks?page=1&pageSize=2');
+      const response = await app.request('api/tasks?page=1&pageSize=2');
 
       expect(response.status).toBe(200);
       const body = (await response.json()) as any;
@@ -193,7 +193,7 @@ describe('Task API Integration Tests', () => {
     });
 
     it('should return 404 for non-existent task', async () => {
-      const response = await app.request('/tasks/00000000-0000-0000-0000-000000000000');
+      const response = await app.request('api/tasks/00000000-0000-0000-0000-000000000000');
 
       expect(response.status).toBe(404);
       const body = (await response.json()) as any;
@@ -277,7 +277,7 @@ describe('Task API Integration Tests', () => {
     });
 
     it('should return 404 for non-existent task', async () => {
-      const response = await app.request('/tasks/00000000-0000-0000-0000-000000000000', {
+      const response = await app.request('api/tasks/00000000-0000-0000-0000-000000000000', {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${API_TOKEN}`,
@@ -326,7 +326,7 @@ describe('Task API Integration Tests', () => {
     });
 
     it('should return 404 for non-existent task', async () => {
-      const response = await app.request('/tasks/00000000-0000-0000-0000-000000000000', {
+      const response = await app.request('api/tasks/00000000-0000-0000-0000-000000000000', {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${API_TOKEN}` },
       });

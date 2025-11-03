@@ -3,7 +3,6 @@ import type { Context } from 'hono';
 import type { TaskService } from '../services/TaskService';
 import { authenticate } from '../middlewares/authenticate';
 import { TaskCreateInputSchema, TaskUpdateInputSchema, TaskFiltersSchema } from '../types/task';
-import { zValidator } from '@hono/zod-validator';
 import { validator } from '../utils/validator';
 
 export const createTaskRoutes = (taskService: TaskService) => {

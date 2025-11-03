@@ -22,8 +22,11 @@ cp .env.example .env
 # Install dependencies
 npm install
 
-# Run in development mode
-npm run dev
+# Build the api server
+npm run build
+
+# Run the API server
+npm run start
 ```
 
 #### 2. Frontend

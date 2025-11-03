@@ -184,7 +184,7 @@ describe('Task API Integration Tests', () => {
         tags: ['test'],
       });
 
-      const response = await app.request(`/tasks/${task.id}`);
+      const response = await app.request(`api/tasks/${task.id}`);
 
       expect(response.status).toBe(200);
       const body = (await response.json()) as any;
@@ -210,7 +210,7 @@ describe('Task API Integration Tests', () => {
         tags: ['test'],
       });
 
-      const response = await app.request(`/tasks/${task.id}`, {
+      const response = await app.request(`api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${API_TOKEN}`,
@@ -242,7 +242,7 @@ describe('Task API Integration Tests', () => {
       await repository.update(task.id as TaskId, { title: 'Updated Once', version: 1 });
 
       // Second update with stale version fails
-      const response = await app.request(`/tasks/${task.id}`, {
+      const response = await app.request(`api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${API_TOKEN}`,
@@ -267,7 +267,7 @@ describe('Task API Integration Tests', () => {
         tags: ['test'],
       });
 
-      const response = await app.request(`/tasks/${task.id}`, {
+      const response = await app.request(`api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'Updated', version: 1 }),
@@ -299,7 +299,7 @@ describe('Task API Integration Tests', () => {
         tags: ['test'],
       });
 
-      const response = await app.request(`/tasks/${task.id as TaskId}`, {
+      const response = await app.request(`api/tasks/${task.id as TaskId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${API_TOKEN}` },
       });
@@ -318,7 +318,7 @@ describe('Task API Integration Tests', () => {
         tags: ['test'],
       });
 
-      const response = await app.request(`/tasks/${task.id}`, {
+      const response = await app.request(`api/tasks/${task.id}`, {
         method: 'DELETE',
       });
 
